@@ -19,14 +19,26 @@ extern I2C_HandleTypeDef hi2c1;
 
 /*****************************************************************/
 
+static inline int i2c_write_byte(uint16_t dev_addr, uint16_t addr, uint8_t dat)
+{
+	 return HAL_I2C_Mem_Write(&hi2c1, dev_addr, addr, I2C_MEMADD_SIZE_8BIT, &dat, 1, I2C_MAX_DELAY);
+}
+
+static inline int i2c_read_byte(uint16_t dev_addr, uint16_t addr, uint8_t *dat)
+{
+	return HAL_I2C_Mem_Read(&hi2c1, dev_addr, addr, I2C_MEMADD_SIZE_8BIT, dat, 1, I2C_MAX_DELAY);
+}
+
+/*****************************************************************/
+
 int at24c02_write_byte(uint16_t addr, uint8_t dat)
 {
-	 return HAL_I2C_Mem_Write(&hi2c1, AT24C02_ADDR_WR, addr, I2C_MEMADD_SIZE_8BIT, &dat, 1, I2C_MAX_DELAY);
+	 return i2c_write_byte(AT24C02_ADDR_WR, addr, dat);
 }
 
 int at24c02_read_byte(uint16_t addr, uint8_t *dat)
 {
-	return HAL_I2C_Mem_Read(&hi2c1, AT24C02_ADDR_RD, addr, I2C_MEMADD_SIZE_8BIT, dat, 1, I2C_MAX_DELAY);
+	return i2c_read_byte(AT24C02_ADDR_RD, addr, dat);
 }
 
 #if 0

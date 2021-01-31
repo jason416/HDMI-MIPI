@@ -18,12 +18,14 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <stdio.h>
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
+#include <string.h>
 #include "24c02.h"
+#include "xpt2046.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,6 +44,8 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+SPI_HandleTypeDef hspi1;
+
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
@@ -53,12 +57,45 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void i2c_test(void)
+{
+	uint8_t ch, i;
+	char str[] = "hello";
+
+	for (i = 0; i < strlen(str); i++) {
+		at24c02_write_byte(i, str[i]);
+		delay_ms(5); /* wait t(WR) = 5ms */
+	}
+
+	for (i = 0; i < strlen(str); i++) {
+		at24c02_read_byte(i, &ch);
+		pr_info("read address(%d), value is: 0x%02x, %c", i, ch, ch);
+	}
+}
+
+void spi_test(void)
+{
+	uint16_t data;
+
+	// RES - 可变电阻
+	data = xpt2406_read_ain0();
+	pr_info("read ain0, value of: %u - 0x%04x", data, data);
+
+	// NTC - 热敏电阻
+	data = xpt2406_read_ain1();
+	pr_info("read ain1, value of: %u - 0x%04x", data, data);
+
+	// GR - 光敏电阻
+	data = xpt2406_read_ain2();
+	pr_info("read ain2, value of: %u - 0x%04x", data, data);
+}
 
 /* USER CODE END 0 */
 
@@ -69,8 +106,7 @@ static void MX_USART1_UART_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  uint8_t ch = 0;
-  uint16_t addr = 1;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -93,24 +129,14 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_USART1_UART_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   pr_info("Initialization finished!");
 
+  i2c_test();
+  spi_test();
 
-  if (at24c02_read_byte(addr, &ch) != HAL_OK) {
-	  pr_info("at24c02 read address(%d) failed", addr);
-  }
-
-  pr_info("read address(%d), value is: 0x%02x", addr, ch);
-
-//  typedef enum
-//  {
-//    HAL_OK       = 0x00U,
-//    HAL_ERROR    = 0x01U,
-//    HAL_BUSY     = 0x02U,
-//    HAL_TIMEOUT  = 0x03U
-//  } HAL_StatusTypeDef;
-
+  pr_info("ready to enter infinite loop");
 
   /* USER CODE END 2 */
 
@@ -119,11 +145,10 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-
-	  delay_s(1);
 
     /* USER CODE BEGIN 3 */
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    delay_s(1);
   }
   /* USER CODE END 3 */
 }
@@ -200,6 +225,44 @@ static void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
+
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
 
 }
 
